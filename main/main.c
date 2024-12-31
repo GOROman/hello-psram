@@ -20,7 +20,7 @@ uint32_t* map_psram_to_virtual_memory( size_t map_size ) {
     void* virtual_base = NULL;
 
     // MMUマッピングを設定
-    printf("\n    esp_err_t err = esp_mmu_map(physical_base, map_size, MMU_TARGET_PSRAM0, MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE, 0, &virtual_base);\n");
+    printf("\n\tesp_err_t err = esp_mmu_map(physical_base, map_size, MMU_TARGET_PSRAM0, MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE, 0, &virtual_base);\n");
     esp_err_t err = esp_mmu_map(physical_base, map_size, MMU_TARGET_PSRAM0, MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE, 0, &virtual_base);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to map PSRAM: %s", esp_err_to_name(err));
@@ -63,12 +63,12 @@ void app_main(void) {
 //    printf("\nheap_caps_print_heap_info(MALLOC_CAP_SPIRAM)\n");
 //    heap_caps_print_heap_info(MALLOC_CAP_SPIRAM);
 
+#if CONFIG_SPIRAM_USE_MEMMAP
     size_t map_size = 1024*1024*8;
     uint32_t* psram_addr = map_psram_to_virtual_memory( map_size );
 
     printf("\n\tesp_mmu_map_dump_mapped_blocks(stdout)\n");
     esp_mmu_map_dump_mapped_blocks(stdout);
-//    uint32_t* psram_addr = (uint32_t*)PSRAM_BASE_ADDR;
     // 4MB 書き込む
     for (int i = 0; i < map_size/sizeof(uint32_t); i++) {
         psram_addr[i] = (uint32_t)&psram_addr[i];
@@ -81,8 +81,6 @@ void app_main(void) {
             printf("[W:0x%08lX] = 0x%08lX P:0x%08lX\n", (uint32_t)&psram_addr[i], psram_addr[i], (uint32_t)paddr);
         }
     }
-    //Cache_WriteBack_Addr(&psram_addr[0], 1024*8);
-
 
     // 4MB 読み込む
     for (int i = 0; i < map_size/sizeof(uint32_t); i++) {
@@ -90,36 +88,38 @@ void app_main(void) {
             printf("[R:0x%08lX] = 0x%08lX\n", (uint32_t)&psram_addr[i], psram_addr[i]);
         }
     }
-
-    size_t alloc_size = 1024*1024*2;
+#endif
+    size_t alloc_size = 1024*8000;//1024*1024*7 + 1024*512;//1024*1024*2;
 
     // PSRAM(SPIRAM)を明示して確保する場合
+    printf("---------------------- Allocating %dKB from PSRAM...", alloc_size/1024);
     uint8_t* psram = (uint8_t*)heap_caps_malloc(alloc_size, MALLOC_CAP_SPIRAM);
     if (psram == NULL) {
         printf("ぬるぽ\n");
     } else {
-        printf("---------------------- Allocated %dKB from PSRAM %p\n", alloc_size/1024, psram);
+        printf("OK! %p\n", psram);
+        if (esp_ptr_external_ram(psram)) {
+            printf("このメモリはPSRAMだよーん！\n");
+        } else {
+            printf("このメモリは内蔵RAMだよーん！\n");
+        }
     }
 
-    if (esp_ptr_external_ram(psram)) {
-        printf("このメモリはPSRAMだよーん！\n");
-    } else {
-        printf("このメモリは内蔵RAMだよーん！\n");
-    }
 
     memory_info();
 
     // 普通にmallocする
+        printf("---------------------- Allocating %dKB from malloc...", alloc_size/1024);
     uint8_t* heap = (uint8_t*)malloc(alloc_size);
     if (heap == NULL) {
         printf("ぬるぽ\n");
     } else {
-        printf("---------------------- Allocated %dKB from malloc %p\n", alloc_size/1024, heap);
-    }
-    if (esp_ptr_external_ram(heap)) {
-        printf("このメモリはPSRAMだよーん！\n");
-    } else {
-        printf("このメモリは内蔵RAMだよーん！\n");
+        printf("OK! %p\n", heap);
+        if (esp_ptr_external_ram(heap)) {
+            printf("このメモリはPSRAMだよーん！\n");
+        } else {
+            printf("このメモリは内蔵RAMだよーん！\n");
+        }
     }
 
     memory_info();
@@ -127,16 +127,17 @@ void app_main(void) {
     // 普通にmallocする
     // menuconfig の "Maximum malloc() size, in bytes, to always put in internal memory" で決まる
     alloc_size = 1024*32;  // 32KB
+    printf("---------------------- Allocating %dKB from malloc...", alloc_size/1024);
     uint8_t* heap2 = (uint8_t*)malloc(alloc_size);
     if (heap2 == NULL) {
         printf("ぬるぽ\n");
     } else {
-        printf("---------------------- Allocated %dKB from malloc %p\n", alloc_size/1024, heap2);
-    }
-    if (esp_ptr_external_ram(heap2)) {
-        printf("このメモリはPSRAMだよーん！\n");
-    } else {
-        printf("このメモリは内蔵RAMだよーん！\n");
+        printf("OK! %p\n", heap2);
+        if (esp_ptr_external_ram(heap2)) {
+            printf("このメモリはPSRAMだよーん！\n");
+        } else {
+            printf("このメモリは内蔵RAMだよーん！\n");
+        }
     }
 
     memory_info();
@@ -149,6 +150,11 @@ void app_main(void) {
         printf("ぬるぽ\n");
     } else {
         printf("---------------------- Allocated %dKB from malloc %p\n", alloc_size/1024, heap3);
+        if (esp_ptr_external_ram(heap3)) {
+            printf("このメモリはPSRAMだよーん！\n");
+        } else {
+            printf("このメモリは内蔵RAMだよーん！\n");
+        }
     }
 
     memory_info();
