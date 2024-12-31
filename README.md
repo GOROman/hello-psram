@@ -29,8 +29,11 @@ idf.py menuconfig
 
 PSRAMの容量などで接続方法(```Quad``` ```Octal```)が違う。
 
+<img width="685" alt="image" src="https://github.com/user-attachments/assets/9eeaa021-0f5d-450e-ae6b-96e74d946231" />
+
+
 - ```Quad```: 信号線4本
-- ```Octal```: 信号線8本
+- ```Octal```: 信号線8本 (GPIO消費)
 
 こちらも menuconfig で設定する。間違えると起動時に怒られる。
 
