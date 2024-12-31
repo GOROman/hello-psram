@@ -26,6 +26,7 @@ void app_main(void) {
     printf("Internal      : %8d (%5dKB)\n", internal_size, internal_size/1024);
     
     memory_info();
+    heap_caps_print_heap_info(MALLOC_CAP_SPIRAM);
 
     size_t alloc_size = 1024*1024*2;
 
@@ -34,8 +35,15 @@ void app_main(void) {
     if (psram == NULL) {
         printf("ぬるぽ\n");
     } else {
-        printf("---------------------- Allocated %dKB from PSRAM\n", alloc_size/1024);
+        printf("---------------------- Allocated %dKB from PSRAM %p\n", alloc_size/1024, psram);
     }
+
+    if (esp_ptr_external_ram(psram)) {
+        printf("このメモリはPSRAMだよーん！\n");
+    } else {
+        printf("このメモリは内蔵RAMだよーん！\n");
+    }
+
     memory_info();
 
     // 普通にmallocする
@@ -43,7 +51,12 @@ void app_main(void) {
     if (heap == NULL) {
         printf("ぬるぽ\n");
     } else {
-        printf("---------------------- Allocated %dKB from malloc\n", alloc_size/1024);
+        printf("---------------------- Allocated %dKB from malloc %p\n", alloc_size/1024, heap);
+    }
+    if (esp_ptr_external_ram(heap)) {
+        printf("このメモリはPSRAMだよーん！\n");
+    } else {
+        printf("このメモリは内蔵RAMだよーん！\n");
     }
 
     memory_info();
@@ -55,18 +68,24 @@ void app_main(void) {
     if (heap2 == NULL) {
         printf("ぬるぽ\n");
     } else {
-        printf("---------------------- Allocated %dKB from malloc\n", alloc_size/1024);
+        printf("---------------------- Allocated %dKB from malloc %p\n", alloc_size/1024, heap2);
+    }
+    if (esp_ptr_external_ram(heap2)) {
+        printf("このメモリはPSRAMだよーん！\n");
+    } else {
+        printf("このメモリは内蔵RAMだよーん！\n");
     }
 
     memory_info();
 
     // 普通にmallocする
     alloc_size = 1024*1;  // 1KB
-    uint8_t* heap3 = (uint8_t*)malloc(alloc_size);
+    uint8_t* heap3 = (uint8_t*)heap_caps_malloc(alloc_size, MALLOC_CAP_32BIT);
+//    uint8_t* heap3 = (uint8_t*)malloc(alloc_size);
     if (heap3 == NULL) {
         printf("ぬるぽ\n");
     } else {
-        printf("---------------------- Allocated %dKB from malloc\n", alloc_size/1024);
+        printf("---------------------- Allocated %dKB from malloc %p\n", alloc_size/1024, heap3);
     }
 
     memory_info();
