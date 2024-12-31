@@ -63,26 +63,32 @@ void app_main(void) {
 //    printf("\nheap_caps_print_heap_info(MALLOC_CAP_SPIRAM)\n");
 //    heap_caps_print_heap_info(MALLOC_CAP_SPIRAM);
 
-    uint32_t* psram_addr = map_psram_to_virtual_memory( 0x1000 );
+    size_t map_size = 1024*1024*8;
+    uint32_t* psram_addr = map_psram_to_virtual_memory( map_size );
 
     printf("\n\tesp_mmu_map_dump_mapped_blocks(stdout)\n");
     esp_mmu_map_dump_mapped_blocks(stdout);
 //    uint32_t* psram_addr = (uint32_t*)PSRAM_BASE_ADDR;
     // 4MB 書き込む
-    for (int i = 0; i < 32; i++) {
-        psram_addr[i] = 0xDeadBeef;
-        esp_paddr_t paddr;
-        mmu_target_t target;
-        esp_mmu_vaddr_to_paddr(&psram_addr[i], &paddr, &target);
-        printf("[W:0x%08lX] = 0x%08lX P:0x%08lX\n", (uint32_t)&psram_addr[i], psram_addr[i], (uint32_t)paddr);
-    esp_cache_msync(&psram_addr[0], 1024*8, ESP_CACHE_MSYNC_FLAG_INVALIDATE);
+    for (int i = 0; i < map_size/sizeof(uint32_t); i++) {
+        psram_addr[i] = (uint32_t)&psram_addr[i];
+        if (i % 0x4000 == 0) {
+            esp_paddr_t paddr;
+            mmu_target_t target;
+        psram_addr[i] = (uint32_t)paddr;
+            esp_mmu_vaddr_to_paddr(&psram_addr[i], &paddr, &target);
+           esp_cache_msync(&psram_addr[0], 1024*8, ESP_CACHE_MSYNC_FLAG_INVALIDATE);
+            printf("[W:0x%08lX] = 0x%08lX P:0x%08lX\n", (uint32_t)&psram_addr[i], psram_addr[i], (uint32_t)paddr);
+        }
     }
     //Cache_WriteBack_Addr(&psram_addr[0], 1024*8);
 
 
     // 4MB 読み込む
-    for (int i = 0; i < 32; i++) {
-        printf("[R:0x%08lX] = 0x%08lX\n", (uint32_t)&psram_addr[i], psram_addr[i]);
+    for (int i = 0; i < map_size/sizeof(uint32_t); i++) {
+        if (i % 0x4000 == 0) {
+            printf("[R:0x%08lX] = 0x%08lX\n", (uint32_t)&psram_addr[i], psram_addr[i]);
+        }
     }
 
     size_t alloc_size = 1024*1024*2;
