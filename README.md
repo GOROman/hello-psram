@@ -38,6 +38,9 @@ PSRAMの容量などで接続方法(```Quad``` ```Octal```)が違う。
 
 - ATOMS3R(ESP32-S3-PICO-1-N8R8) の場合は、```Octal```。
 
+<img width="685" alt="image" src="https://github.com/user-attachments/assets/5c58a366-e8d8-4a75-a31a-c5139516afef" />
+
+
 ## ビルド方法
 
 ~~~
