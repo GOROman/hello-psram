@@ -18,3 +18,8 @@ idf.py build
 ~~~
 idf.py flash monitor
 ~~~
+
+## 参考資料
+
+- Support for External RAM ( https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/external-ram.html )
+
